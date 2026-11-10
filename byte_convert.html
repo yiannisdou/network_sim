@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Οκτάδα bit – Μετατροπή δυαδικού ↔ δεκαδικού</title>
+<style>
+  :root{
+    --bg:#f6f8fb; --card:#ffffff; --ink:#1f2933; --muted:#5f6b7a;
+    --line:#d5dce5; --on:#1e7a46; --on-bg:#e3f4ea; --off-bg:#f1f3f6;
+    --accent:#1d5fa8; --accent-bg:#e6effa; --warn:#b54708; --warn-bg:#fdf1e6;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Segoe UI",Calibri,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+  .wrap{max-width:860px;margin:0 auto;padding:16px}
+  h1{font-size:1.35rem;margin:0 0 4px}
+  .sub{color:var(--muted);margin:0 0 14px;font-size:.95rem}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+  .tab{border:1px solid var(--line);background:var(--card);padding:8px 14px;border-radius:8px;cursor:pointer;font-size:.95rem;color:var(--ink)}
+  .tab.active{background:var(--accent);border-color:var(--accent);color:#fff}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
+  .hidden{display:none}
+
+  /* bits */
+  .bits{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin:6px 0 14px}
+  .bit{display:flex;flex-direction:column;align-items:center;gap:4px}
+  .pos{font-size:.8rem;color:var(--muted)}
+  .val{font-size:.95rem;font-weight:600}
+  .pow{font-size:.78rem;color:var(--muted)}
+  .sw{width:100%;max-width:70px;aspect-ratio:1/1.15;border:2px solid var(--line);border-radius:10px;
+      background:var(--off-bg);font-size:1.8rem;font-weight:700;cursor:pointer;color:#8a94a3;transition:.15s}
+  .sw.on{background:var(--on-bg);border-color:var(--on);color:var(--on)}
+  .sw.locked{cursor:default;pointer-events:none}
+  .sw.hl{outline:3px solid var(--accent);outline-offset:2px}
+
+  .result{display:flex;flex-wrap:wrap;gap:10px;align-items:stretch}
+  .box{flex:1 1 200px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fbfcfe}
+  .box .lbl{font-size:.8rem;color:var(--muted)}
+  .box .big{font-size:1.6rem;font-weight:700;font-family:Consolas,"Courier New",monospace;letter-spacing:1px}
+  .sum{margin-top:10px;font-family:Consolas,"Courier New",monospace;font-size:1rem;min-height:1.4em}
+  .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}
+  button.btn{border:1px solid var(--accent);background:var(--accent);color:#fff;border-radius:8px;padding:8px 14px;font-size:.95rem;cursor:pointer}
+  button.btn.sec{background:#fff;color:var(--accent)}
+  button.btn:disabled{opacity:.45;cursor:default}
+  input[type=number]{width:110px;padding:8px;font-size:1rem;border:1px solid var(--line);border-radius:8px}
+  .msg{padding:10px 12px;border-radius:8px;margin-top:10px;font-size:.98rem}
+  .msg.ok{background:var(--on-bg);color:var(--on)}
+  .msg.bad{background:var(--warn-bg);color:var(--warn)}
+  .msg.info{background:var(--accent-bg);color:var(--accent)}
+  ol.steps{margin:10px 0 0;padding-left:22px;line-height:1.6}
+  ol.steps li.yes b{color:var(--on)}
+  ol.steps li.no b{color:var(--muted)}
+  .target{font-size:2rem;font-weight:700;color:var(--accent)}
+  .score{color:var(--muted);font-size:.9rem}
+  .note{color:var(--muted);font-size:.85rem;margin-top:12px}
+  @media (max-width:520px){
+    .sw{font-size:1.3rem}
+    .val{font-size:.8rem}
+    .box .big{font-size:1.3rem}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Οκτάδα bit (1 byte)</h1>
+  <p class="sub">Κάθε οκτάδα μιας διεύθυνσης IPv4 είναι ένας δυαδικός αριθμός 8 bit με τιμές από 0 έως 2<sup>8</sup>−1 = 255.</p>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="explore">1. Εξερεύνηση</button>
+    <button class="tab" data-tab="steps">2. Δεκαδικό → Δυαδικό βήμα-βήμα</button>
+    <button class="tab" data-tab="challenge">3. Πρόκληση</button>
+  </div>
+
+  <!-- ===== 1. Εξερεύνηση ===== -->
+  <section id="explore" class="card">
+    <p>Πάτησε τα bit για να τα κάνεις <b>0</b> ή <b>1</b>. Ο δεκαδικός αριθμός είναι το άθροισμα των αξιών των άσσων.</p>
+    <div class="bits" id="bitsExplore"></div>
+    <div class="result">
+      <div class="box"><div class="lbl">Δυαδικός</div><div class="big" id="exBin">00000000</div></div>
+      <div class="box"><div class="lbl">Δεκαδικός</div><div class="big" id="exDec">0</div></div>
+    </div>
+    <div class="sum" id="exSum"></div>
+    <div class="row">
+      <button class="btn sec" id="exClear">Όλα 0</button>
+      <button class="btn sec" id="exAll">Όλα 1</button>
+    </div>
+  </section>
+
+  <!-- ===== 2. Βήμα-βήμα ===== -->
+  <section id="steps" class="card hidden">
+    <p>Δώσε έναν δεκαδικό αριθμό (0–255) και δες πώς βρίσκουμε τον δυαδικό του, αφαιρώντας διαδοχικά τις αξίες 128, 64, 32, …, 1.</p>
+    <div class="row">
+      <input type="number" id="stNum" min="0" max="255" value="205">
+      <button class="btn" id="stStart">Ξεκίνα</button>
+      <button class="btn" id="stNext" disabled>Επόμενο βήμα</button>
+      <button class="btn sec" id="stAll" disabled>Όλα τα βήματα</button>
+    </div>
+    <div class="bits" id="bitsSteps"></div>
+    <div class="result">
+      <div class="box"><div class="lbl">Υπόλοιπο</div><div class="big" id="stRem">–</div></div>
+      <div class="box"><div class="lbl">Δυαδικός (μέχρι τώρα)</div><div class="big" id="stBin">--------</div></div>
+    </div>
+    <ol class="steps" id="stList"></ol>
+    <div id="stMsg"></div>
+  </section>
+
+  <!-- ===== 3. Πρόκληση ===== -->
+  <section id="challenge" class="card hidden">
+    <div class="row" style="justify-content:space-between">
+      <div>
+        <span id="chPrompt">Σχημάτισε στα bit τον αριθμό:</span>
+        <div class="target" id="chTarget">–</div>
+      </div>
+      <div class="score" id="chScore">Σωστές: 0 / 0</div>
+    </div>
+    <div class="row">
+      <label><input type="radio" name="chMode" value="d2b" checked> Δεκαδικό → Δυαδικό</label>
+      <label><input type="radio" name="chMode" value="b2d"> Δυαδικό → Δεκαδικό</label>
+    </div>
+    <div class="bits" id="bitsChallenge"></div>
+    <div class="row" id="chAnswerRow" style="display:none">
+      <label>Δεκαδικός: <input type="number" id="chAnswer" min="0" max="255"></label>
+    </div>
+    <div class="row">
+      <button class="btn" id="chCheck">Έλεγχος</button>
+      <button class="btn sec" id="chNew">Νέος αριθμός</button>
+      <button class="btn sec" id="chHint">Βοήθεια</button>
+    </div>
+    <div id="chMsg"></div>
+  </section>
+
+  <p class="note">Αξία ψηφίου = 2<sup>θέση</sup>. Η αρίθμηση των θέσεων ξεκινά από δεξιά με το b0.</p>
+</div>
+
+<script>
+(function(){
+  const VALUES = [128,64,32,16,8,4,2,1];
+
+  /* --- βοηθητικά --- */
+  function buildBits(container, onToggle){
+    const btns = [];
+    VALUES.forEach((v,i)=>{
+      const p = 7-i;
+      const d = document.createElement('div');
+      d.className = 'bit';
+      d.innerHTML = '<span class="pos">b'+p+'</span><span class="val">'+v+'</span><span class="pow">2<sup>'+p+'</sup></span>';
+      const b = document.createElement('button');
+      b.className = 'sw'; b.textContent = '0'; b.type = 'button';
+      b.setAttribute('aria-label','bit b'+p+', αξία '+v);
+      b.addEventListener('click',()=>{ if(onToggle){ setBit(b, b.textContent==='0'); onToggle(); } });
+      d.appendChild(b); container.appendChild(d); btns.push(b);
+    });
+    return btns;
+  }
+  function setBit(b,on){ b.textContent = on?'1':'0'; b.classList.toggle('on',on); }
+  function readBits(btns){ return btns.map(b=>b.textContent==='1'); }
+  function toDec(bits){ return bits.reduce((s,on,i)=>s+(on?VALUES[i]:0),0); }
+  function toBin(bits){ return bits.map(x=>x?'1':'0').join(''); }
+  function setFromNumber(btns,n){ btns.forEach((b,i)=>setBit(b,(n & VALUES[i])!==0)); }
+  function msg(el,cls,html){ el.innerHTML = '<div class="msg '+cls+'">'+html+'</div>'; }
+
+  /* --- καρτέλες --- */
+  document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    ['explore','steps','challenge'].forEach(id=>document.getElementById(id).classList.toggle('hidden', id!==t.dataset.tab));
+  }));
+
+  /* ===== 1. Εξερεύνηση ===== */
+  const exBtns = buildBits(document.getElementById('bitsExplore'), updateExplore);
+  function updateExplore(){
+    const bits = readBits(exBtns);
+    const dec = toDec(bits);
+    document.getElementById('exBin').textContent = toBin(bits);
+    document.getElementById('exDec').textContent = dec;
+    const parts = VALUES.filter((v,i)=>bits[i]);
+    document.getElementById('exSum').textContent = parts.length ? parts.join(' + ') + ' = ' + dec : 'Κανένας άσσος → 0';
+  }
+  document.getElementById('exClear').onclick = ()=>{ setFromNumber(exBtns,0); updateExplore(); };
+  document.getElementById('exAll').onclick = ()=>{ setFromNumber(exBtns,255); updateExplore(); };
+  updateExplore();
+
+  /* ===== 2. Βήμα-βήμα ===== */
+  const stBtns = buildBits(document.getElementById('bitsSteps'), null);
+  stBtns.forEach(b=>b.classList.add('locked'));
+  let st = null;
+  const stNum = document.getElementById('stNum');
+  const stNext = document.getElementById('stNext');
+  const stAll = document.getElementById('stAll');
+  const stList = document.getElementById('stList');
+  const stMsg = document.getElementById('stMsg');
+
+  function resetSteps(){
+    stBtns.forEach(b=>{ setBit(b,false); b.textContent='–'; b.classList.remove('hl'); });
+    stList.innerHTML=''; stMsg.innerHTML='';
+    document.getElementById('stRem').textContent='–';
+    document.getElementById('stBin').textContent='--------';
+  }
+  resetSteps();
+
+  document.getElementById('stStart').onclick = ()=>{
+    const n = Number(stNum.value);
+    resetSteps();
+    if(stNum.value==='' || !Number.isInteger(n) || n<0 || n>255){
+      msg(stMsg,'bad','Δώσε ακέραιο αριθμό από 0 έως 255 (όσες τιμές χωράνε σε 8 bit).');
+      st=null; stNext.disabled=true; stAll.disabled=true; return;
+    }
+    st = {n:n, rem:n, i:0, used:[]};
+    document.getElementById('stRem').textContent = n;
+    stNext.disabled=false; stAll.disabled=false;
+    stBtns[0].classList.add('hl');
+  };
+
+  function doStep(){
+    if(!st || st.i>7) return;
+    const i = st.i, v = VALUES[i], p = 7-i;
+    const li = document.createElement('li');
+    stBtns.forEach(b=>b.classList.remove('hl'));
+    if(st.rem >= v){
+      const before = st.rem; st.rem -= v; st.used.push(v);
+      setBit(stBtns[i],true);
+      li.className='yes';
+      li.innerHTML = 'Αφαιρείται το <b>'+v+'</b> από το '+before+'; <b>Ναι</b> → '+before+' − '+v+' = '+st.rem+', σημειώνω <b>1</b> στη θέση b'+p;
+    } else {
+      setBit(stBtns[i],false);
+      li.className='no';
+      li.innerHTML = 'Αφαιρείται το <b>'+v+'</b> από το '+st.rem+'; <b>Όχι</b> → σημειώνω <b>0</b> στη θέση b'+p;
+    }
+    stList.appendChild(li);
+    st.i++;
+    document.getElementById('stRem').textContent = st.rem;
+    document.getElementById('stBin').textContent = stBtns.map((b,k)=>k<st.i?b.textContent:'-').join('');
+    if(st.i<=7){ stBtns[st.i].classList.add('hl'); }
+    else{
+      stNext.disabled=true; stAll.disabled=true;
+      const bin = stBtns.map(b=>b.textContent).join('');
+      const sumTxt = st.used.length ? st.used.join(' + ') : '0';
+      msg(stMsg,'ok','Δηλαδή (' + st.n + ')<sub>10</sub> = ' + sumTxt + ' = (' + bin + ')<sub>2</sub>');
+    }
+  }
+  stNext.onclick = doStep;
+  stAll.onclick = ()=>{ while(st && st.i<=7) doStep(); };
+
+  /* ===== 3. Πρόκληση ===== */
+  const chBtns = buildBits(document.getElementById('bitsChallenge'), ()=>{ document.getElementById('chMsg').innerHTML=''; });
+  const chMsg = document.getElementById('chMsg');
+  const chTarget = document.getElementById('chTarget');
+  const chAnswer = document.getElementById('chAnswer');
+  let chN = 0, chMode = 'd2b', good = 0, total = 0, answered = false;
+
+  function newChallenge(){
+    chN = Math.floor(Math.random()*256);
+    answered = false; chMsg.innerHTML=''; chAnswer.value='';
+    if(chMode==='d2b'){
+      document.getElementById('chPrompt').textContent = 'Σχημάτισε στα bit τον αριθμό:';
+      chTarget.textContent = chN;
+      setFromNumber(chBtns,0);
+      chBtns.forEach(b=>b.classList.remove('locked'));
+      document.getElementById('chAnswerRow').style.display='none';
+    } else {
+      document.getElementById('chPrompt').textContent = 'Ποιος δεκαδικός αντιστοιχεί στον δυαδικό;';
+      setFromNumber(chBtns,chN);
+      chTarget.textContent = toBin(readBits(chBtns));
+      chBtns.forEach(b=>b.classList.add('locked'));
+      document.getElementById('chAnswerRow').style.display='flex';
+    }
+  }
+  function updateScore(){ document.getElementById('chScore').textContent = 'Σωστές: '+good+' / '+total; }
+
+  document.getElementById('chCheck').onclick = ()=>{
+    let correct;
+    if(chMode==='d2b'){
+      correct = toDec(readBits(chBtns))===chN;
+    } else {
+      if(chAnswer.value===''){ msg(chMsg,'info','Γράψε πρώτα τον δεκαδικό αριθμό.'); return; }
+      correct = Number(chAnswer.value)===chN;
+    }
+    if(!answered){ total++; if(correct) good++; answered = true; updateScore(); }
+    if(correct){
+      const parts = VALUES.filter(v=>chN & v);
+      msg(chMsg,'ok','Σωστό! ' + (parts.length?parts.join(' + '):'0') + ' = ' + chN);
+    } else if(chMode==='d2b'){
+      msg(chMsg,'bad','Όχι ακόμα: τα bit σου δίνουν ' + toDec(readBits(chBtns)) + '. Διόρθωσε και πάτησε ξανά «Έλεγχος».');
+    } else {
+      msg(chMsg,'bad','Όχι ακόμα. Πρόσθεσε τις αξίες των θέσεων που έχουν 1 και ξαναδοκίμασε.');
+    }
+  };
+  document.getElementById('chNew').onclick = newChallenge;
+  document.getElementById('chHint').onclick = ()=>{
+    if(chMode==='d2b'){
+      const first = VALUES.find(v=>v<=chN);
+      msg(chMsg,'info', chN===0 ? 'Το 0 δεν έχει κανέναν άσσο.' :
+        'Ξεκίνα από τη μεγαλύτερη αξία που χωράει στο '+chN+': είναι το '+first+'. Βάλε 1 εκεί και συνέχισε με το υπόλοιπο '+(chN-first)+'.');
+    } else {
+      msg(chMsg,'info','Γράψε κάτω από κάθε 1 την αξία της θέσης του (128, 64, 32, 16, 8, 4, 2, 1) και πρόσθεσέ τες.');
+    }
+  };
+  document.querySelectorAll('input[name=chMode]').forEach(r=>r.addEventListener('change',()=>{ chMode=r.value; newChallenge(); }));
+  newChallenge(); updateScore();
+})();
+</script>
+</body>
+</html>
