@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Αναλυτής διεύθυνσης IPv4</title>
+<style>
+  :root{
+    --bg:#f6f8fb; --card:#fff; --ink:#1f2933; --muted:#5f6b7a; --line:#d5dce5;
+    --net:#1d5fa8; --net-bg:#e6effa; --host:#b45309; --host-bg:#fdf1e3;
+    --cls:#7c3aed; --cls-bg:#f1eafe;
+    --ok:#1e7a46; --ok-bg:#e3f4ea; --bad:#b42318; --bad-bg:#fdeceb; --info-bg:#eef2f7;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Segoe UI",Calibri,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+  .wrap{max-width:900px;margin:0 auto;padding:16px}
+  h1{font-size:1.35rem;margin:0 0 4px}
+  .sub{color:var(--muted);margin:0 0 14px;font-size:.95rem}
+  .sub a{color:var(--net)}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+  .tab{border:1px solid var(--line);background:var(--card);padding:8px 14px;border-radius:8px;cursor:pointer;font-size:.95rem;color:var(--ink)}
+  .tab.active{background:var(--net);border-color:var(--net);color:#fff}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
+  .hidden{display:none}
+  .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0}
+  input[type=text]{font-size:1.25rem;padding:8px 10px;border:1px solid var(--line);border-radius:8px;width:220px;font-family:Consolas,"Courier New",monospace}
+  button.btn{border:1px solid var(--net);background:var(--net);color:#fff;border-radius:8px;padding:8px 14px;font-size:.95rem;cursor:pointer}
+  button.btn.sec{background:#fff;color:var(--net)}
+  button.chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:4px 10px;font-family:Consolas,monospace;font-size:.85rem;cursor:pointer;color:var(--ink)}
+  .lbl{font-size:.8rem;color:var(--muted)}
+
+  /* octets */
+  .octets{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0 6px}
+  .oct{border:2px solid var(--line);border-radius:10px;padding:8px 6px;text-align:center}
+  .oct.net{border-color:var(--net);background:var(--net-bg)}
+  .oct.host{border-color:var(--host);background:var(--host-bg)}
+  .oct .dec{font-size:1.7rem;font-weight:700;font-family:Consolas,"Courier New",monospace}
+  .oct .bin{font-family:Consolas,"Courier New",monospace;font-size:1.05rem;letter-spacing:1px;margin-top:2px}
+  .oct .bin .lead{background:var(--cls-bg);color:var(--cls);font-weight:700;border-radius:3px;outline:1px solid var(--cls)}
+  .oct .tag{font-size:.75rem;margin-top:4px;font-weight:600}
+  .oct.net .tag{color:var(--net)} .oct.host .tag{color:var(--host)}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.85rem;color:var(--muted);margin-bottom:10px}
+  .sw{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:4px}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin-top:10px}
+  .box{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fbfcfe}
+  .box .v{font-size:1.15rem;font-weight:700;font-family:Consolas,"Courier New",monospace;margin-top:2px;word-break:break-all}
+  .box .v.txt{font-family:inherit}
+  .msg{padding:10px 12px;border-radius:8px;margin-top:10px;font-size:.97rem;line-height:1.5}
+  .msg.ok{background:var(--ok-bg);color:var(--ok)}
+  .msg.bad{background:var(--bad-bg);color:var(--bad)}
+  .msg.info{background:var(--info-bg);color:var(--ink)}
+  .explain{margin-top:12px;line-height:1.6;font-size:.97rem}
+  .explain b.c{color:var(--cls)}
+
+  table{border-collapse:collapse;width:100%;margin-top:14px;font-size:.9rem}
+  th,td{border:1px solid var(--line);padding:6px 8px;text-align:center}
+  th{background:#f1f4f8}
+  tr.cur td{background:var(--cls-bg);font-weight:600}
+  td.mono{font-family:Consolas,"Courier New",monospace}
+
+  /* challenge */
+  .q{margin:14px 0 4px;font-weight:600}
+  .opts{display:flex;flex-wrap:wrap;gap:6px}
+  .opt{border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:.95rem;color:var(--ink)}
+  .opt.sel{border-color:var(--net);background:var(--net-bg);color:var(--net);font-weight:600}
+  .opt.right{border-color:var(--ok);background:var(--ok-bg);color:var(--ok)}
+  .opt.wrong{border-color:var(--bad);background:var(--bad-bg);color:var(--bad)}
+  .target{font-size:2rem;font-weight:700;font-family:Consolas,"Courier New",monospace;color:var(--net)}
+  .score{color:var(--muted);font-size:.9rem}
+  input.wide{width:200px;font-size:1.05rem}
+  @media (max-width:560px){ .oct .dec{font-size:1.25rem} .oct .bin{font-size:.8rem;letter-spacing:0} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Αναλυτής διεύθυνσης IPv4</h1>
+  <p class="sub">Γράψε μια διεύθυνση IP και δες σε ποια τάξη ανήκει, ποιο τμήμα της δείχνει το δίκτυο και ποιο τον υπολογιστή.
+    Χρειάζεσαι επανάληψη στη μετατροπή; Δες την <a href="https://yiannisdou.github.io/network_sim/byte_convert.html" target="_blank">Οκτάδα bit</a>.</p>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="analyze">1. Ανάλυση</button>
+    <button class="tab" data-tab="challenge">2. Πρόκληση</button>
+  </div>
+
+  <!-- ===== Ανάλυση ===== -->
+  <section id="analyze" class="card">
+    <div class="row">
+      <input type="text" id="ip" value="192.168.1.18" spellcheck="false" autocomplete="off" aria-label="Διεύθυνση IP">
+      <button class="btn" id="go">Ανάλυση</button>
+      <button class="btn sec" id="rnd">Τυχαία</button>
+    </div>
+    <div class="row"><span class="lbl">Παραδείγματα:</span>
+      <button class="chip">10.25.3.7</button>
+      <button class="chip">172.20.5.1</button>
+      <button class="chip">150.140.1.1</button>
+      <button class="chip">192.168.1.0</button>
+      <button class="chip">192.168.1.255</button>
+      <button class="chip">127.0.0.1</button>
+      <button class="chip">224.0.0.5</button>
+      <button class="chip">192.168.1.300</button>
+    </div>
+    <div id="out"></div>
+  </section>
+
+  <!-- ===== Πρόκληση ===== -->
+  <section id="challenge" class="card hidden">
+    <div class="row" style="justify-content:space-between">
+      <div><span class="lbl">Διεύθυνση:</span><div class="target" id="chIp">–</div></div>
+      <div class="score" id="chScore">Σωστές απαντήσεις: 0 / 0</div>
+    </div>
+
+    <div class="q">α) Σε ποια τάξη ανήκει;</div>
+    <div class="opts" id="qClass">
+      <button class="opt" data-v="A">A</button><button class="opt" data-v="B">B</button>
+      <button class="opt" data-v="C">C</button><button class="opt" data-v="D">D</button><button class="opt" data-v="E">E</button>
+    </div>
+
+    <div class="q">β) Είναι ιδιωτική ή δημόσια;</div>
+    <div class="opts" id="qPriv">
+      <button class="opt" data-v="priv">Ιδιωτική</button><button class="opt" data-v="pub">Δημόσια</button>
+    </div>
+
+    <div class="q">γ) Ποια είναι η διεύθυνση του δικτύου στο οποίο ανήκει;</div>
+    <input type="text" class="wide" id="qNet" spellcheck="false" autocomplete="off" placeholder="π.χ. 192.168.1.0">
+
+    <div class="q">δ) Ποια είναι η διεύθυνση εκπομπής (broadcast) του δικτύου;</div>
+    <input type="text" class="wide" id="qBc" spellcheck="false" autocomplete="off" placeholder="π.χ. 192.168.1.255">
+
+    <div class="row" style="margin-top:14px">
+      <button class="btn" id="chCheck">Έλεγχος</button>
+      <button class="btn sec" id="chNew">Νέα διεύθυνση</button>
+      <button class="btn sec" id="chShow">Δείξε την ανάλυση</button>
+    </div>
+    <div id="chMsg"></div>
+    <div id="chOut"></div>
+  </section>
+</div>
+
+<script>
+(function(){
+  /* Η μάσκα εμφανίζεται μόνο με ?mask=1 στο τέλος της διεύθυνσης (για μετά τη διδασκαλία της μάσκας) */
+  const SHOW_MASK = new URLSearchParams(location.search).get('mask')==='1';
+  const CLASSES = {
+    A:{lead:'0',    from:0,   to:127, netOct:1, mask:'255.0.0.0',     hosts:'2²⁴ − 2 = 16.777.214', use:'Πολύ μεγάλα δίκτυα'},
+    B:{lead:'10',   from:128, to:191, netOct:2, mask:'255.255.0.0',   hosts:'2¹⁶ − 2 = 65.534',     use:'Μεσαία δίκτυα'},
+    C:{lead:'110',  from:192, to:223, netOct:3, mask:'255.255.255.0', hosts:'2⁸ − 2 = 254',          use:'Μικρά δίκτυα'},
+    D:{lead:'1110', from:224, to:239, netOct:0, mask:'–',             hosts:'–',                     use:'Πολυεκπομπή (multicast)'},
+    E:{lead:'1111', from:240, to:255, netOct:0, mask:'–',             hosts:'–',                     use:'Δεσμευμένη (πειραματική)'}
+  };
+
+  function bin8(n){ return n.toString(2).padStart(8,'0'); }
+  function classOf(a){ for(const k in CLASSES){ if(a>=CLASSES[k].from && a<=CLASSES[k].to) return k; } }
+  function isPrivate(o){
+    return o[0]===10 || (o[0]===172 && o[1]>=16 && o[1]<=31) || (o[0]===192 && o[1]===168);
+  }
+  function privRange(o){
+    if(o[0]===10) return '10.0.0.0 – 10.255.255.255, τάξη A';
+    if(o[0]===172) return '172.16.0.0 – 172.31.255.255, τάξη B';
+    return '192.168.0.0 – 192.168.255.255, τάξη C';
+  }
+
+  /* έλεγχος εγκυρότητας με εξήγηση */
+  function parse(s){
+    s = s.trim();
+    if(s==='') return {err:'Γράψε μια διεύθυνση IP.'};
+    const p = s.split('.');
+    if(p.length!==4) return {err:'Μια διεύθυνση IPv4 αποτελείται από <b>τέσσερις</b> δεκαδικούς αριθμούς χωρισμένους με τελείες. Εδώ βρέθηκαν '+p.length+'.'};
+    const o = [];
+    for(let i=0;i<4;i++){
+      if(!/^\d{1,3}$/.test(p[i])) return {err:'Η '+(i+1)+'η οκτάδα («'+(p[i]||' ')+'») δεν είναι δεκαδικός αριθμός.'};
+      const n = Number(p[i]);
+      if(n>255) return {err:'Η '+(i+1)+'η οκτάδα είναι <b>'+n+'</b>. Κάθε αριθμός πρέπει να είναι από 0 έως 255, γιατί σε 8 bit χωράνε τιμές από 0 έως 2<sup>8</sup>−1 = 255.'};
+      o.push(n);
+    }
+    return {o:o};
+  }
+
+  function analyze(o){
+    const c = classOf(o[0]), C = CLASSES[c];
+    const r = {o:o, cls:c, C:C, priv:isPrivate(o), special:(o[0]===127||o[0]===0)};
+    if(C.netOct && !r.special){
+      r.net = o.map((v,i)=>i<C.netOct?v:0).join('.');
+      r.bc  = o.map((v,i)=>i<C.netOct?v:255).join('.');
+      const hostPart = o.slice(C.netOct);
+      r.hostAllZero = hostPart.every(v=>v===0);
+      r.hostAllOne  = hostPart.every(v=>v===255);
+    }
+    return r;
+  }
+
+  function render(r){
+    const o=r.o, c=r.cls, C=r.C;
+    let h = '<div class="legend">'+
+      '<span><span class="sw" style="background:var(--net-bg);outline:2px solid var(--net)"></span>Αναγνωριστικό δικτύου (Network ID)</span>'+
+      '<span><span class="sw" style="background:var(--host-bg);outline:2px solid var(--host)"></span>Αναγνωριστικό υπολογιστή (Host ID)</span>'+
+      '<span><span class="sw" style="background:var(--cls-bg);outline:1px solid var(--cls)"></span>Bit που καθορίζουν την τάξη</span></div>';
+    h += '<div class="octets">';
+    o.forEach((v,i)=>{
+      let cls='', tag='&nbsp;';
+      if(C.netOct && !r.special){ if(i<C.netOct){cls='net';tag='δίκτυο';} else {cls='host';tag='υπολογιστής';} }
+      let b = bin8(v);
+      if(i===0) b = '<span class="lead">'+b.slice(0,C.lead.length)+'</span>'+b.slice(C.lead.length);
+      h += '<div class="oct '+cls+'"><div class="lbl">'+(i+1)+'η οκτάδα</div><div class="dec">'+v+'</div><div class="bin">'+b+'</div><div class="tag">'+tag+'</div></div>';
+    });
+    h += '</div>';
+
+    h += '<div class="grid">';
+    h += box('Τάξη', c, '');
+    h += box('Χρήση', r.special ? (o[0]===127?'Επανατροφοδότηση (loopback)':'Δεσμευμένη') : C.use, 'txt');
+    if(C.netOct && !r.special){
+      h += box('Διεύθυνση δικτύου', r.net, '');
+      h += box('Διεύθυνση εκπομπής', r.bc, '');
+      if(SHOW_MASK) h += box('Προκαθορισμένη μάσκα', C.mask, '');
+      h += box('Διευθύνσεις για υπολογιστές', C.hosts, 'txt');
+      h += box('Ιδιωτική ή δημόσια;', r.priv ? 'Ιδιωτική' : 'Δημόσια', 'txt');
+    }
+    h += '</div>';
+
+    /* εξήγηση */
+    let e = '<div class="explain">Η 1η οκτάδα είναι <b>'+o[0]+'</b> = <b>'+bin8(o[0])+'</b><sub>2</sub>. '+
+      'Ξεκινά με <b class="c">'+C.lead+'</b>, άρα η διεύθυνση ανήκει στην <b>τάξη '+c+'</b> (1η οκτάδα από '+C.from+' έως '+C.to+').';
+    if(C.netOct && !r.special){
+      const nb = C.netOct*8, hb = 32-nb;
+      e += ' Στην τάξη '+c+' τα πρώτα <b>'+nb+' bit</b> ('+C.netOct+(C.netOct===1?' οκτάδα':' οκτάδες')+') δείχνουν το δίκτυο και τα υπόλοιπα <b>'+hb+' bit</b> τον υπολογιστή. '+
+           'Η διεύθυνση δικτύου βγαίνει αν κάνουμε όλα τα bit του υπολογιστή <b>0</b>, και η διεύθυνση εκπομπής αν τα κάνουμε όλα <b>1</b>.';
+    }
+    e += '</div>';
+    h += e;
+
+    /* ειδικές περιπτώσεις */
+    let notes = [];
+    if(o[0]===127) notes.push(['info','Το 127.x.x.x είναι δεσμευμένο για τη <b>διεύθυνση επανατροφοδότησης (loopback)</b>: ο υπολογιστής «μιλάει» με τον εαυτό του. Δεν δίνεται σε δικτυακή διεπαφή.']);
+    if(o[0]===0) notes.push(['info','Οι διευθύνσεις που ξεκινούν με 0 είναι δεσμευμένες και δεν δίνονται σε υπολογιστές.']);
+    if(o[0]===169 && o[1]===254) notes.push(['info','Το 169.254.x.x το παίρνει αυτόματα ένας υπολογιστής όταν <b>δεν βρει διακομιστή DHCP</b> (APIPA). Αν το δεις στο ipconfig, κάτι δεν πάει καλά με τη σύνδεση.']);
+    if(c==='D') notes.push(['info','Οι διευθύνσεις τάξης D δεν δίνονται σε υπολογιστές. Χρησιμοποιούνται για αποστολή στο ίδιο μήνυμα σε μια <b>ομάδα</b> υπολογιστών (πολυεκπομπή, δες πρωτόκολλο IGMP).']);
+    if(c==='E') notes.push(['info','Οι διευθύνσεις τάξης E είναι δεσμευμένες για πειραματική χρήση και δεν δίνονται σε υπολογιστές.']);
+    if(C.netOct && !r.special){
+      if(r.hostAllZero) notes.push(['bad','Όλα τα bit του υπολογιστή είναι 0: αυτή είναι η <b>διεύθυνση του ίδιου του δικτύου</b> και δεν μπορεί να δοθεί σε υπολογιστή.']);
+      else if(r.hostAllOne) notes.push(['bad','Όλα τα bit του υπολογιστή είναι 1: αυτή είναι η <b>διεύθυνση εκπομπής (broadcast)</b> του δικτύου και δεν μπορεί να δοθεί σε υπολογιστή.']);
+      else notes.push(['ok','Η διεύθυνση μπορεί να δοθεί σε δικτυακή διεπαφή υπολογιστή (unicast).']);
+    }
+    if(r.priv) notes.push(['info','Είναι <b>ιδιωτική</b> διεύθυνση (περιοχή '+privRange(o)+'). Χρησιμοποιείται μέσα σε τοπικά δίκτυα και δεν δρομολογείται στο Διαδίκτυο.']);
+    notes.forEach(n=>{ h += '<div class="msg '+n[0]+'">'+n[1]+'</div>'; });
+
+    /* πίνακας τάξεων */
+    h += '<table><thead><tr><th>Τάξη</th><th>Αρχικά bit</th><th>1η οκτάδα</th><th>Δίκτυο / Υπολογιστής (bit)</th>'+(SHOW_MASK?'<th>Μάσκα</th>':'')+'</tr></thead><tbody>';
+    for(const k in CLASSES){
+      const K = CLASSES[k];
+      const split = K.netOct ? (K.netOct*8)+' / '+(32-K.netOct*8) : '–';
+      h += '<tr'+(k===c?' class="cur"':'')+'><td>'+k+'</td><td class="mono">'+K.lead+'…</td><td>'+K.from+' – '+K.to+'</td><td>'+split+'</td>'+(SHOW_MASK?'<td class="mono">'+K.mask+'</td>':'')+'</tr>';
+    }
+    h += '</tbody></table>';
+    return h;
+  }
+  function box(l,v,cls){ return '<div class="box"><div class="lbl">'+l+'</div><div class="v '+cls+'">'+v+'</div></div>'; }
+
+  /* ===== Ανάλυση ===== */
+  const ip = document.getElementById('ip'), out = document.getElementById('out');
+  function run(){
+    const p = parse(ip.value);
+    out.innerHTML = p.err ? '<div class="msg bad">'+p.err+'</div>' : render(analyze(p.o));
+  }
+  document.getElementById('go').onclick = run;
+  ip.addEventListener('keydown',e=>{ if(e.key==='Enter') run(); });
+  document.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{ ip.value=b.textContent; run(); });
+  document.getElementById('rnd').onclick = ()=>{ ip.value = randomIp().join('.'); run(); };
+  run();
+
+  /* τυχαία διεύθυνση: κυρίως A/B/C, με συχνές ιδιωτικές */
+  function rnd(a,b){ return a+Math.floor(Math.random()*(b-a+1)); }
+  function randomIp(){
+    const t = Math.random();
+    if(t<0.12) return [10,rnd(0,255),rnd(0,255),rnd(1,254)];
+    if(t<0.24) return [172,rnd(16,31),rnd(0,255),rnd(1,254)];
+    if(t<0.40) return [192,168,rnd(0,255),rnd(1,254)];
+    if(t<0.92){
+      let a; do{ a = rnd(1,223); }while(a===127 || a===10);
+      return [a,rnd(0,255),rnd(0,255),rnd(1,254)];
+    }
+    return [rnd(224,239),rnd(0,255),rnd(0,255),rnd(1,254)];
+  }
+
+  /* καρτέλες */
+  document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    ['analyze','challenge'].forEach(id=>document.getElementById(id).classList.toggle('hidden', id!==t.dataset.tab));
+  }));
+
+  /* ===== Πρόκληση ===== */
+  let cur=null, good=0, total=0, counted=false;
+  const chMsg=document.getElementById('chMsg'), chOut=document.getElementById('chOut');
+  const qNet=document.getElementById('qNet'), qBc=document.getElementById('qBc');
+  function pick(groupId){
+    document.querySelectorAll('#'+groupId+' .opt').forEach(b=>b.onclick=()=>{
+      document.querySelectorAll('#'+groupId+' .opt').forEach(x=>x.classList.remove('sel','right','wrong'));
+      b.classList.add('sel');
+    });
+  }
+  pick('qClass'); pick('qPriv');
+  function sel(groupId){ const s=document.querySelector('#'+groupId+' .opt.sel'); return s?s.dataset.v:null; }
+  function setNetQs(){
+    const show = cur.C.netOct>0;
+    ['qNet','qBc'].forEach(id=>{
+      const el=document.getElementById(id);
+      el.style.display = show?'':'none';
+      el.previousElementSibling.style.display = show?'':'none';
+    });
+    const pq=document.getElementById('qPriv');
+    pq.style.display = show?'':'none'; pq.previousElementSibling.style.display = show?'':'none';
+  }
+  function newQ(){
+    cur = analyze(randomIp()); counted=false;
+    document.getElementById('chIp').textContent = cur.o.join('.');
+    document.querySelectorAll('#challenge .opt').forEach(x=>x.classList.remove('sel','right','wrong'));
+    qNet.value=''; qBc.value=''; qNet.style.borderColor=''; qBc.style.borderColor='';
+    chMsg.innerHTML=''; chOut.innerHTML='';
+    setNetQs();
+  }
+  function norm(s){ const p=parse(s); return p.err?null:p.o.join('.'); }
+  document.getElementById('chCheck').onclick=()=>{
+    const hasNet = cur.C.netOct>0;
+    const aC=sel('qClass'), aP=sel('qPriv');
+    if(!aC || (hasNet && (!aP || qNet.value.trim()==='' || qBc.value.trim()===''))){
+      chMsg.innerHTML='<div class="msg info">Απάντησε σε όλα τα ερωτήματα πριν τον έλεγχο.</div>'; return;
+    }
+    let right=0, n=0, fb=[];
+    n++; const okC = aC===cur.cls; if(okC) right++;
+    document.querySelector('#qClass .opt.sel').classList.add(okC?'right':'wrong');
+    if(!okC) fb.push('Τάξη: κοίτα τα πρώτα bit της 1ης οκτάδας ('+cur.o[0]+' = '+bin8(cur.o[0])+').');
+    if(hasNet){
+      n++; const okP = (aP==='priv')===cur.priv; if(okP) right++;
+      document.querySelector('#qPriv .opt.sel').classList.add(okP?'right':'wrong');
+      if(!okP) fb.push('Ιδιωτικές είναι μόνο οι 10.x.x.x, 172.16.x.x – 172.31.x.x και 192.168.x.x.');
+      n++; const okN = norm(qNet.value)===cur.net; if(okN) right++;
+      qNet.style.borderColor = okN?'var(--ok)':'var(--bad)';
+      if(!okN) fb.push('Διεύθυνση δικτύου: κράτα τις οκτάδες του δικτύου και κάνε 0 τις οκτάδες του υπολογιστή.');
+      n++; const okB = norm(qBc.value)===cur.bc; if(okB) right++;
+      qBc.style.borderColor = okB?'var(--ok)':'var(--bad)';
+      if(!okB) fb.push('Διεύθυνση εκπομπής: κράτα τις οκτάδες του δικτύου και κάνε 255 τις οκτάδες του υπολογιστή (όλα τα bit 1).');
+    }
+    if(!counted){ total+=n; good+=right; counted=true;
+      document.getElementById('chScore').textContent='Σωστές απαντήσεις: '+good+' / '+total; }
+    chMsg.innerHTML = right===n
+      ? '<div class="msg ok">Όλα σωστά! Πάτησε «Νέα διεύθυνση» για να συνεχίσεις.</div>'
+      : '<div class="msg bad">Σωστά '+right+' από '+n+'. Διόρθωσε και πάτησε ξανά «Έλεγχος».<br>• '+fb.join('<br>• ')+'</div>';
+  };
+  document.getElementById('chNew').onclick=newQ;
+  document.getElementById('chShow').onclick=()=>{ chOut.innerHTML = '<hr style="border:0;border-top:1px solid var(--line);margin:16px 0">'+render(cur); };
+  newQ();
+})();
+</script>
+</body>
+</html>
