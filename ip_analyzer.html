@@ -44,7 +44,7 @@
 
   .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin-top:10px}
   .box{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fbfcfe}
-  .box .v{font-size:1.15rem;font-weight:700;font-family:Consolas,"Courier New",monospace;margin-top:2px;word-break:break-all}
+  .box .v{font-size:1.15rem;font-weight:700;font-family:Consolas,"Courier New",monospace;margin-top:2px;overflow-wrap:break-word}
   .box .v.txt{font-family:inherit}
   .msg{padding:10px 12px;border-radius:8px;margin-top:10px;font-size:.97rem;line-height:1.5}
   .msg.ok{background:var(--ok-bg);color:var(--ok)}
@@ -145,7 +145,7 @@
     A:{lead:'0',    from:0,   to:127, netOct:1, mask:'255.0.0.0',     hosts:'2²⁴ − 2 = 16.777.214', use:'Πολύ μεγάλα δίκτυα'},
     B:{lead:'10',   from:128, to:191, netOct:2, mask:'255.255.0.0',   hosts:'2¹⁶ − 2 = 65.534',     use:'Μεσαία δίκτυα'},
     C:{lead:'110',  from:192, to:223, netOct:3, mask:'255.255.255.0', hosts:'2⁸ − 2 = 254',          use:'Μικρά δίκτυα'},
-    D:{lead:'1110', from:224, to:239, netOct:0, mask:'–',             hosts:'–',                     use:'Πολυεκπομπή (multicast)'},
+    D:{lead:'1110', from:224, to:239, netOct:0, mask:'–',             hosts:'–',                     use:'Πολυδιανομή (multicast)'},
     E:{lead:'1111', from:240, to:255, netOct:0, mask:'–',             hosts:'–',                     use:'Δεσμευμένη (πειραματική)'}
   };
 
@@ -211,7 +211,7 @@
     if(C.netOct && !r.special){
       h += box('Διεύθυνση δικτύου', r.net, '');
       h += box('Διεύθυνση εκπομπής', r.bc, '');
-      if(SHOW_MASK) h += box('Προκαθορισμένη μάσκα', C.mask, '');
+      if(SHOW_MASK){ h += box('Προκαθορισμένη μάσκα', C.mask, ''); h += box('Μορφή CIDR', o.join('.')+' /'+(C.netOct*8), ''); }
       h += box('Διευθύνσεις για υπολογιστές', C.hosts, 'txt');
       h += box('Ιδιωτική ή δημόσια;', r.priv ? 'Ιδιωτική' : 'Δημόσια', 'txt');
     }
@@ -227,13 +227,14 @@
     }
     e += '</div>';
     h += e;
+    if(SHOW_MASK && C.netOct && !r.special) h += andTable(r);
 
     /* ειδικές περιπτώσεις */
     let notes = [];
     if(o[0]===127) notes.push(['info','Το 127.x.x.x είναι δεσμευμένο για τη <b>διεύθυνση επανατροφοδότησης (loopback)</b>: ο υπολογιστής «μιλάει» με τον εαυτό του. Δεν δίνεται σε δικτυακή διεπαφή.']);
-    if(o[0]===0) notes.push(['info','Οι διευθύνσεις που ξεκινούν με 0 είναι δεσμευμένες και δεν δίνονται σε υπολογιστές.']);
-    if(o[0]===169 && o[1]===254) notes.push(['info','Το 169.254.x.x το παίρνει αυτόματα ένας υπολογιστής όταν <b>δεν βρει διακομιστή DHCP</b> (APIPA). Αν το δεις στο ipconfig, κάτι δεν πάει καλά με τη σύνδεση.']);
-    if(c==='D') notes.push(['info','Οι διευθύνσεις τάξης D δεν δίνονται σε υπολογιστές. Χρησιμοποιούνται για αποστολή στο ίδιο μήνυμα σε μια <b>ομάδα</b> υπολογιστών (πολυεκπομπή, δες πρωτόκολλο IGMP).']);
+    if(o[0]===0) notes.push(['info','Οι διευθύνσεις 0.0.0.0/8 (<b>Limited source</b>) εμφανίζονται μόνο ως διευθύνσεις προέλευσης και δεν δίνονται σε υπολογιστές.']);
+    if(o[0]===169 && o[1]===254) notes.push(['info','Το 169.254.x.x το παίρνει αυτόματα ένας υπολογιστής όταν <b>δεν βρει διακομιστή DHCP</b> (Link local). Αν το δεις στο ipconfig, κάτι δεν πάει καλά με τη σύνδεση.']);
+    if(c==='D') notes.push(['info','Οι διευθύνσεις τάξης D δεν δίνονται σε υπολογιστές. Χρησιμοποιούνται για αποστολή στο ίδιο μήνυμα σε μια <b>ομάδα</b> υπολογιστών (πολυδιανομή, δες πρωτόκολλο IGMP). Π.χ. στη 224.0.0.2 «ακούνε» όλοι οι δρομολογητές του υποδικτύου.']);
     if(c==='E') notes.push(['info','Οι διευθύνσεις τάξης E είναι δεσμευμένες για πειραματική χρήση και δεν δίνονται σε υπολογιστές.']);
     if(C.netOct && !r.special){
       if(r.hostAllZero) notes.push(['bad','Όλα τα bit του υπολογιστή είναι 0: αυτή είναι η <b>διεύθυνση του ίδιου του δικτύου</b> και δεν μπορεί να δοθεί σε υπολογιστή.']);
@@ -244,14 +245,26 @@
     notes.forEach(n=>{ h += '<div class="msg '+n[0]+'">'+n[1]+'</div>'; });
 
     /* πίνακας τάξεων */
-    h += '<table><thead><tr><th>Τάξη</th><th>Αρχικά bit</th><th>1η οκτάδα</th><th>Δίκτυο / Υπολογιστής (bit)</th>'+(SHOW_MASK?'<th>Μάσκα</th>':'')+'</tr></thead><tbody>';
+    h += '<table><thead><tr><th>Τάξη</th><th>Αρχικά bit</th><th>1η οκτάδα</th><th>Δίκτυο / Υπολογιστής (bit)</th>'+(SHOW_MASK?'<th>Μάσκα</th><th>CIDR</th>':'')+'</tr></thead><tbody>';
     for(const k in CLASSES){
       const K = CLASSES[k];
       const split = K.netOct ? (K.netOct*8)+' / '+(32-K.netOct*8) : '–';
-      h += '<tr'+(k===c?' class="cur"':'')+'><td>'+k+'</td><td class="mono">'+K.lead+'…</td><td>'+K.from+' – '+K.to+'</td><td>'+split+'</td>'+(SHOW_MASK?'<td class="mono">'+K.mask+'</td>':'')+'</tr>';
+      h += '<tr'+(k===c?' class="cur"':'')+'><td>'+k+'</td><td class="mono">'+K.lead+'…</td><td>'+K.from+' – '+K.to+'</td><td>'+split+'</td>'+(SHOW_MASK?'<td class="mono">'+K.mask+'</td><td class="mono">'+(K.netOct?'/'+K.netOct*8:'–')+'</td>':'')+'</tr>';
     }
     h += '</tbody></table>';
     return h;
+  }
+  /* πίνακας λογικού AND (μόνο με ?mask=1) */
+  function andTable(r){
+    const m = r.C.mask.split('.').map(Number), n = r.net.split('.').map(Number);
+    const g = a=>a.map(bin8).map(x=>x.slice(0,4)+' '+x.slice(4));
+    const row = (lbl,arr,dec,cls)=>'<tr'+(cls?' class="'+cls+'"':'')+'><th style="text-align:right">'+lbl+'</th>'+g(arr).map(x=>'<td class="mono">'+x+'</td>').join('')+'<td class="mono"><b>'+dec+'</b></td></tr>';
+    return '<div class="explain" style="margin-top:14px"><b>Λογικό AND, bit προς bit:</b> διεύθυνση IP AND μάσκα = διεύθυνση δικτύου (1 AND 1 = 1, σε κάθε άλλη περίπτωση 0).</div>'+
+      '<table style="margin-top:6px"><tbody>'+
+      row('Διεύθυνση IP:', r.o, r.o.join('.'))+
+      row('Μάσκα:', m, r.C.mask)+
+      row('Διεύθυνση δικτύου:', n, r.net, 'cur')+
+      '</tbody></table>';
   }
   function box(l,v,cls){ return '<div class="box"><div class="lbl">'+l+'</div><div class="v '+cls+'">'+v+'</div></div>'; }
 
