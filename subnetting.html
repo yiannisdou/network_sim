@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ασκήσεις υποδικτύωσης</title>
+<style>
+  :root{
+    --bg:#0f172a; --card:#1e293b; --ink:#e2e8f0; --muted:#94a3b8; --line:#334155; --field:#0f172a; --th:#273449;
+    --net:#60a5fa; --net-bg:rgba(96,165,250,.13); --btn:#2563eb; --host:#fbbf24; --sub:#c4b5fd;
+    --ok:#4ade80; --ok-bg:rgba(74,222,128,.13); --bad:#f87171; --bad-bg:rgba(248,113,113,.13); --info-bg:#273449; --hl-bg:rgba(196,181,253,.16);
+  }
+  :root.light{
+    --bg:#f6f8fb; --card:#fff; --ink:#1f2933; --muted:#5f6b7a; --line:#d5dce5; --field:#fff; --th:#f1f4f8;
+    --net:#1d5fa8; --net-bg:#e6effa; --btn:#1d5fa8; --host:#b45309; --sub:#7c3aed;
+    --ok:#1e7a46; --ok-bg:#e3f4ea; --bad:#b42318; --bad-bg:#fdeceb; --info-bg:#eef2f7; --hl-bg:#f1eafe;
+  }
+  :root.light input::placeholder{color:#9aa5b1}
+  .top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+  .theme{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:3px 10px;font-size:.82rem;cursor:pointer;white-space:nowrap}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Segoe UI",Calibri,Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:15px}
+  .wrap{max-width:860px;margin:0 auto;padding:10px}
+  h1{font-size:1.2rem;margin:0 0 2px}
+  .sub{color:var(--muted);margin:0 0 8px;font-size:.88rem}
+  .sub a{color:var(--net)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+  .row{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}
+  .lbl{font-size:.78rem;color:var(--muted)}
+  select,input[type=text]{font-size:.92rem;padding:4px 7px;border:1px solid var(--line);border-radius:6px;background:var(--field);color:var(--ink)}
+  input[type=text]{font-family:Consolas,"Courier New",monospace;width:100%;min-width:0}
+  input::placeholder{color:#64748b}
+  input.ok{border-color:var(--ok);background:var(--ok-bg)}
+  input.bad{border-color:var(--bad);background:var(--bad-bg)}
+  button.btn{border:1px solid var(--btn);background:var(--btn);color:#fff;border-radius:6px;padding:5px 12px;font-size:.9rem;cursor:pointer}
+  button.btn.sec{background:transparent;color:var(--net);border-color:var(--net)}
+  details summary{cursor:pointer;color:var(--net);font-size:.85rem;margin-top:6px}
+  .custom{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:6px;margin-top:6px;align-items:end}
+
+  .stmt{font-size:.98rem;line-height:1.5;background:var(--net-bg);border-left:4px solid var(--net);padding:7px 11px;border-radius:6px}
+  .q{margin:10px 0 4px;font-weight:600;line-height:1.4;font-size:.93rem}
+  table{border-collapse:collapse;width:100%}
+  table.form td,table.form th{border:1px solid var(--line);padding:3px 6px;vertical-align:middle;font-size:.9rem}
+  table.form th{background:var(--th);text-align:left;font-weight:600}
+  table.form td.l{width:55%}
+  table.form td.given{font-family:Consolas,monospace;font-weight:700;padding-left:10px}
+  .hint{font-size:.78rem}
+  .hint:empty{display:none}
+  .hint.bad{color:var(--bad)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .grid2 > div{min-width:0}
+  .msg{padding:7px 10px;border-radius:6px;margin-top:8px;font-size:.9rem;line-height:1.45}
+  .msg.ok{background:var(--ok-bg);color:var(--ok)}
+  .msg.bad{background:var(--bad-bg);color:var(--bad)}
+  .msg.info{background:var(--info-bg)}
+  .score{color:var(--muted);font-size:.82rem}
+
+  #sol h3{font-size:.98rem;margin:8px 0 4px}
+  #sol ol{line-height:1.6;padding-left:20px;margin:2px 0;font-size:.92rem}
+  .mono{font-family:Consolas,"Courier New",monospace}
+  table.list{font-size:.86rem;margin-top:4px}
+  table.list th,table.list td{border:1px solid var(--line);padding:3px 6px;text-align:center}
+  table.list th{background:var(--th)}
+  table.list tr.mark td{background:var(--hl-bg);font-weight:600}
+  .bn{color:var(--net);font-weight:700} .bs{color:var(--sub);font-weight:700} .bh{color:var(--host);font-weight:700}
+  @media (max-width:640px){ .grid2{grid-template-columns:1fr} }
+
+  @media print{
+    :root{--bg:#fff;--card:#fff;--ink:#000;--muted:#444;--line:#999;--field:#fff;--th:#eee;--net-bg:#f2f2f2;--net:#000}
+    .noprint{display:none!important}
+    .card{border:0;padding:0}
+    input[type=text]{border:0;border-bottom:1px dotted #555;border-radius:0;background:#fff!important}
+    input::placeholder{color:transparent}
+    .hint,#msg{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><h1>Ασκήσεις υποδικτύωσης</h1><button class="theme noprint" id="btnTheme" type="button"></button></div>
+  <p class="sub noprint">Συμπλήρωσε τα κενά και πάτησε «Έλεγχος». Βοηθητικά: <a href="https://yiannisdou.github.io/network_sim/mask_sim.html?all=1" target="_blank">Μάσκα δικτύου</a> ·
+    <a href="https://yiannisdou.github.io/network_sim/byte_convert.html" target="_blank">Οκτάδα bit</a></p>
+
+  <!-- ρυθμίσεις -->
+  <div class="card noprint">
+    <div class="row">
+      <label><span class="lbl">Είδος άσκησης</span><br>
+        <select id="selKind">
+          <option value="rand">Τυχαίο</option>
+          <option value="x">Σε Χ υποδίκτυα</option>
+          <option value="y">Με τουλάχιστον Υ υπολογιστές</option>
+        </select></label>
+      <label><span class="lbl">Αρχικό δίκτυο</span><br>
+        <select id="selCls">
+          <option value="C">Τάξη C (/24)</option>
+          <option value="B">Τάξη B (/16)</option>
+          <option value="rand">Τυχαία (B ή C)</option>
+        </select></label>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn" id="btnNew">Νέα άσκηση</button>
+        <button class="btn sec" id="btnPrint">Εκτύπωση</button>
+      </div>
+    </div>
+    <details>
+      <summary>Δική μου άσκηση (για τον εκπαιδευτικό)</summary>
+      <div class="custom">
+        <label><span class="lbl">Διεύθυνση δικτύου</span><input type="text" id="cNet" placeholder="π.χ. 192.130.5.0"></label>
+        <label><span class="lbl">Ζητείται</span><br>
+          <select id="cKind"><option value="x">Χ υποδίκτυα</option><option value="y">τουλάχιστον Υ υπολογιστές</option></select></label>
+        <label><span class="lbl">Τιμή Χ ή Υ</span><input type="text" id="cVal" placeholder="π.χ. 25"></label>
+        <div><button class="btn sec" id="btnCustom">Δημιουργία</button></div>
+      </div>
+      <div id="cErr"></div>
+    </details>
+  </div>
+
+  <!-- άσκηση -->
+  <div class="card" id="ex">
+        <div class="stmt" id="stmt"></div>
+    <div id="qs"></div>
+    <div class="row noprint" style="margin-top:10px;align-items:center">
+      <button class="btn" id="btnCheck">Έλεγχος</button>
+      <button class="btn sec" id="btnSol">Δείξε τη λύση</button>
+      <span class="score" id="score" style="margin-left:auto"></span>
+    </div>
+    <div id="msg" class="noprint"></div>
+  </div>
+  <div class="card noprint" id="sol" style="display:none"></div>
+</div>
+
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  /* ---------- θέμα: ?theme=light|dark, αλλιώς η τελευταία επιλογή, αλλιώς σκοτεινό ---------- */
+  (function(){
+    const root=document.documentElement, KEY='netsim_theme';
+    let t=new URLSearchParams(location.search).get('theme');
+    if(t!=='light'&&t!=='dark'){ try{ t=localStorage.getItem(KEY); }catch(e){} }
+    const apply=v=>{ root.classList.toggle('light',v==='light'); $('btnTheme').textContent = v==='light' ? '☾ Σκοτεινό' : '☀ Φωτεινό'; };
+    let cur = t==='light' ? 'light' : 'dark'; apply(cur);
+    $('btnTheme').onclick=()=>{ cur = cur==='light'?'dark':'light'; apply(cur); try{ localStorage.setItem(KEY,cur); }catch(e){} };
+  })();
+  /* ---------- βοηθητικά ---------- */
+  const toOct=n=>[n>>>24,(n>>>16)&255,(n>>>8)&255,n&255];
+  const dotted=n=>toOct(n).join('.');
+  const maskInt=p=>p===0?0:((0xFFFFFFFF<<(32-p))>>>0);
+  const bin8=v=>v.toString(2).padStart(8,'0');
+  const bin32=n=>toOct(n).map(bin8).join('.');
+  const fmt=n=>n.toLocaleString('el-GR');
+  const SUP={'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹'};
+  const pw=e=>'2'+String(e).split('').map(d=>SUP[d]).join('');
+  const rnd=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+  const pick=a=>a[Math.floor(Math.random()*a.length)];
+  const msg=(c,h)=>'<div class="msg '+c+'">'+h+'</div>';
+  const NEU=['','ένα','δύο','τρία','τέσσερα','πέντε','έξι','επτά','οκτώ','εννέα','δέκα','έντεκα','δώδεκα','δεκατρία','δεκατέσσερα','δεκαπέντε','δεκαέξι','δεκαεπτά','δεκαοκτώ','δεκαεννέα','είκοσι'];
+  const MAS=NEU.map(w=>w.replace(/^τρία$/,'τρεις').replace(/^δεκατρία$/,'δεκατρείς').replace(/^τέσσερα$/,'τέσσερις').replace(/^δεκατέσσερα$/,'δεκατέσσερις').replace(/^ένα$/,'έναν'));
+  const words=(n,arr)=>n<=20?arr[n]+' ('+n+')':String(n);
+  const ord=i=>(i+1)+'ο';                       /* 0 → «1ο» */
+  function parseIp(s){
+    const p=s.trim().split('.'); if(p.length!==4) return null;
+    let n=0; for(const x of p){ if(!/^\d{1,3}$/.test(x)||+x>255) return null; n=n*256+(+x); }
+    return n>>>0;
+  }
+  const parseNum=s=>{ const t=s.replace(/[\s.]/g,''); return /^\d+$/.test(t)?Number(t):null; };
+  const parseBin=s=>{ const t=s.replace(/[\s.]/g,''); return /^[01]{32}$/.test(t)?t:null; };
+
+  /* ---------- δημιουργία άσκησης ---------- */
+  function build(netInt,p,kind,val){
+    let n,h;
+    if(kind==='x'){ n=Math.ceil(Math.log2(val)); h=32-p-n; }
+    else { h=2; while(Math.pow(2,h)-2<val) h++; n=32-p-h; }
+    if(n<1||h<2) return null;
+    const S=Math.pow(2,n), np=p+n, size=Math.pow(2,h);
+    const E={net:netInt,p:p,cls:p===24?'C':(p===16?'B':'A'),kind:kind,val:val,n:n,h:h,np:np,S:S,size:size};
+    /* ερώτημα με δύο υποδίκτυα */
+    /* ερωτήματα μόνο έως το 5ο υποδίκτυο· «τελευταίο» μόνο όταν είναι μέσα σε αυτά */
+    const MAXI=Math.min(S-1,4);
+    const pairs = S<=5 ? [[0,1],[0,S-1]].concat(S>2?[[1,S-1],[0,2]]:[]) : [[0,1],[0,2],[1,2],[0,3],[2,4],[1,4]];
+    E.pair=pick(pairs);
+    /* επιπλέον ερωτήματα: 2 από 3 */
+    const extras=['bin','hosts','cmp'].sort(()=>Math.random()-.5).slice(0,2);
+    E.extras=['bin','hosts','cmp'].filter(x=>extras.includes(x));
+    E.k = S===2 ? 1 : rnd(1,MAXI);
+    return E;
+  }
+  function randomEx(){
+    let cls=$('selCls').value; if(cls==='rand') cls=pick(['B','C','C']);
+    let kind=$('selKind').value; if(kind==='rand') kind=pick(['x','y']);
+    let net,p;
+    if(cls==='C'){ p=24; net=Math.random()<.3?[192,168,rnd(0,255),0]:[rnd(192,223),rnd(0,255),rnd(0,255),0]; }
+    else { p=16; net=Math.random()<.3?[172,rnd(16,31),0,0]:[rnd(128,191),rnd(0,255),0,0]; }
+    const netInt=((net[0]<<24)|(net[1]<<16)|(net[2]<<8)|net[3])>>>0;
+    let val;
+    if(kind==='x'){
+      val = rnd(2,10);                                   /* όχι πάνω από 10 υποδίκτυα */
+    } else {
+      const hb = (cls==='C'?8:16) - rnd(1,3);            /* 1–3 ψηφία στη μάσκα → έως 8 υποδίκτυα */
+      val = rnd(Math.pow(2,hb-1)-1,Math.pow(2,hb)-2);
+    }
+    return build(netInt,p,kind,val);
+  }
+
+  /* ---------- εμφάνιση ---------- */
+  let E=null, fields=[], counted=false, good=0, total=0;
+  const subnetNet=i=>(E.net+i*E.size)>>>0;
+  const subnetBc =i=>(E.net+(i+1)*E.size-1)>>>0;
+  const lbl=i=>i===E.S-1?'τελευταίο':(['πρώτο','δεύτερο','τρίτο','τέταρτο','πέμπτο'][i]||ord(i));
+  const inp=(id,ph)=>'<input type="text" id="'+id+'" autocomplete="off" spellcheck="false"'+(ph?' placeholder="'+ph+'"':'')+'><div class="hint" id="h_'+id+'"></div>';
+
+  function render(){
+    counted=false; $('msg').innerHTML=''; $('sol').style.display='none';
+    const netTxt=dotted(E.net)+'/'+E.p;
+    $('stmt').innerHTML = E.kind==='x'
+      ? 'Δίνεται η διεύθυνση δικτύου <b>'+netTxt+'</b>. Το δίκτυο πρόκειται να χωριστεί σε <b>'+words(E.val,NEU)+'</b> υποδίκτυα.'
+      : 'Δίνεται η διεύθυνση δικτύου <b>'+netTxt+'</b> και ζητείται να χωριστεί το δίκτυο σε υποδίκτυα με <b>τουλάχιστον '+words(E.val,MAS)+'</b> υπολογιστές το καθένα.';
+    fields=[]; let h='', q=1;
+    const F=(id,type,ans,hint)=>fields.push({id:id,type:type,ans:ans,hint:hint});
+
+    /* 1. Πίνακας */
+    h+='<div class="q">'+(q++)+'. Να συμπληρώσετε τα κενά του πίνακα.</div>';
+    h+='<table class="form"><tbody>'+
+      '<tr><td class="l">Διεύθυνση δικτύου</td><td class="given">'+dotted(E.net)+'</td></tr>'+
+      '<tr><td class="l">Προκαθορισμένη μάσκα</td><td>'+inp('t_dm','δεκαδική μορφή με τελείες')+'</td></tr>'+
+      '<tr><td class="l">Ψηφία που δόθηκαν στη νέα μάσκα</td><td>'+inp('t_n')+'</td></tr>'+
+      '<tr><td class="l">Νέα μάσκα υποδικτύων</td><td>'+inp('t_nm','δεκαδική μορφή με τελείες')+'</td></tr>'+
+      '<tr><td class="l">Συνολικός αριθμός υποδικτύων</td><td>'+inp('t_S')+'</td></tr>'+
+      '<tr><td class="l">Συνολικός αριθμός διευθύνσεων ανά υποδίκτυο</td><td>'+inp('t_A')+'</td></tr>'+
+      '<tr><td class="l">Συνολικός αριθμός χρησιμοποιήσιμων διευθύνσεων Η/Υ ανά υποδίκτυο</td><td>'+inp('t_U')+'</td></tr>'+
+      '</tbody></table>';
+    F('t_dm','ip',maskInt(E.p),'Η προκαθορισμένη μάσκα εξαρτάται από την τάξη του δικτύου.');
+    F('t_n','num',E.n,E.kind==='x'?'Βρες το μικρότερο n με 2ⁿ ≥ '+E.val+'.':'Βρες πρώτα τα ψηφία για Η/Υ (2ʰ − 2 ≥ '+E.val+') και αφαίρεσέ τα από τα ψηφία υπολογιστή της προκαθορισμένης μάσκας.');
+    F('t_nm','ip',maskInt(E.np),'Πρόσθεσε στην προκαθορισμένη μάσκα τόσους άσους όσα τα ψηφία που δόθηκαν.');
+    F('t_S','num',E.S,'Υποδίκτυα = 2 ^ (ψηφία που δόθηκαν).');
+    F('t_A','num',E.size,'Διευθύνσεις = 2 ^ (ψηφία που έμειναν για Η/Υ).');
+    F('t_U','num',E.size-2,'Αφαιρούμε τη διεύθυνση υποδικτύου και τη διεύθυνση εκπομπής.');
+
+    /* 2. Δύο υποδίκτυα */
+    const [a,b]=E.pair;
+    const pairTxt=(a===0&&b===1&&E.S>2)?'για τα δύο (2) πρώτα υποδίκτυα':'για το '+lbl(a)+' και το '+lbl(b)+' υποδίκτυο';
+    h+='<div class="q">'+(q++)+'. Να δώσετε τη διεύθυνση του υποδικτύου και τη διεύθυνση εκπομπής '+pairTxt+'.</div>';
+    h+='<table class="form"><thead><tr><th></th><th>Διεύθυνση υποδικτύου</th><th>Διεύθυνση εκπομπής</th></tr></thead><tbody>';
+    [a,b].forEach((i,k)=>{
+      const nm=lbl(i); h+='<tr><td>'+nm.charAt(0).toUpperCase()+nm.slice(1)+' υποδίκτυο</td><td>'+inp('p'+k+'n')+'</td><td>'+inp('p'+k+'b')+'</td></tr>';
+      F('p'+k+'n','ip',subnetNet(i),'Κάθε υποδίκτυο ξεκινά '+E.size+' διευθύνσεις μετά το προηγούμενο.');
+      F('p'+k+'b','ip',subnetBc(i),'Εκπομπή = διεύθυνση του επόμενου υποδικτύου − 1 (όλα τα ψηφία Η/Υ άσοι).');
+    });
+    h+='</tbody></table>';
+
+    /* 3+. επιπλέον */
+    const xs=[];
+    E.extras.forEach(x=>{
+      let t='';
+      if(x==='bin'){
+        t+='<div class="q">'+(q++)+'. Να γράψετε τη νέα μάσκα σε δυαδική μορφή.</div>'+inp('x_bin','32 ψηφία, π.χ. 11111111.11111111.…');
+        F('x_bin','bin',bin32(maskInt(E.np)).replace(/\./g,''),'Η νέα μάσκα έχει '+E.np+' άσους από αριστερά και '+(32-E.np)+' μηδενικά.');
+      }
+      if(x==='hosts'){
+        const kl=E.k===E.S-1?'τελευταίο':ord(E.k);
+        t+='<div class="q">'+(q++)+'. Για το '+kl+' υποδίκτυο, να δώσετε τις διευθύνσεις του 1ου και του τελευταίου Η/Υ.</div>';
+        t+='<table class="form"><tbody><tr><td class="l">1ος Η/Υ</td><td>'+inp('x_f')+'</td></tr><tr><td class="l">Τελευταίος Η/Υ</td><td>'+inp('x_l')+'</td></tr></tbody></table>';
+        F('x_f','ip',(subnetNet(E.k)+1)>>>0,'1ος Η/Υ = διεύθυνση υποδικτύου + 1.');
+        F('x_l','ip',(subnetBc(E.k)-1)>>>0,'Τελευταίος Η/Υ = διεύθυνση εκπομπής − 1.');
+      }
+      if(x==='cmp'){
+        t+='<div class="q">'+(q++)+'. Να συγκρίνετε συνολικά τις διαθέσιμες διευθύνσεις για υπολογιστές πριν και μετά την υποδικτύωση.</div>';
+        t+='<table class="form"><tbody>'+
+          '<tr><td class="l">Πριν την υποδικτύωση</td><td>'+inp('x_b4')+'</td></tr>'+
+          '<tr><td class="l">Μετά (σε όλα τα υποδίκτυα)</td><td>'+inp('x_af')+'</td></tr>'+
+          '<tr><td class="l">Πόσες χάθηκαν;</td><td>'+inp('x_lost')+'</td></tr></tbody></table>';
+        const before=Math.pow(2,32-E.p)-2, after=E.S*(E.size-2);
+        F('x_b4','num',before,'Πριν: 2 ^ (ψηφία Η/Υ της προκαθορισμένης μάσκας) − 2.');
+        F('x_af','num',after,'Μετά: πλήθος υποδικτύων × χρησιμοποιήσιμες διευθύνσεις ανά υποδίκτυο.');
+        F('x_lost','num',before-after,'Διαφορά πριν − μετά.');
+      }
+      xs.push(t);
+    });
+    h+='<div class="grid2">'+xs.map(t=>'<div>'+t+'</div>').join('')+'</div>';
+    $('qs').innerHTML=h;
+    fields.forEach(f=>$(f.id).addEventListener('input',()=>{ $(f.id).classList.remove('ok','bad'); $('h_'+f.id).textContent=''; }));
+  }
+
+  /* ---------- έλεγχος ---------- */
+  function check(){
+    let right=0, empty=0;
+    fields.forEach(f=>{
+      const el=$(f.id), v=el.value, hn=$('h_'+f.id);
+      if(v.trim()===''){ empty++; el.classList.remove('ok','bad'); hn.textContent=''; return; }
+      let ok;
+      if(f.type==='ip') ok=parseIp(v)===f.ans;
+      else if(f.type==='num') ok=parseNum(v)===f.ans;
+      else ok=parseBin(v)===f.ans;
+      el.classList.toggle('ok',ok); el.classList.toggle('bad',!ok);
+      hn.className='hint '+(ok?'':'bad'); hn.textContent=ok?'':f.hint;
+      if(ok) right++;
+    });
+    const N=fields.length;
+    if(!counted && empty===0){ counted=true; good+=right; total+=N; $('score').textContent='Συνολικά σωστά: '+good+' / '+total; }
+    $('msg').innerHTML = empty ? msg('info','Σωστά '+right+' από '+N+'. Υπάρχουν ακόμα '+empty+' κενά.')
+      : right===N ? msg('ok','Όλα σωστά! Πάτησε «Νέα άσκηση» για να συνεχίσεις.')
+      : msg('bad','Σωστά '+right+' από '+N+'. Δες τις υποδείξεις κάτω από τα κόκκινα πεδία, διόρθωσε και πάτησε ξανά «Έλεγχος».');
+  }
+
+  /* ---------- λύση ---------- */
+  function solution(){
+    const hostBits0=32-E.p, cN=E.cls, before=Math.pow(2,hostBits0)-2;
+    let s='<h3>Λύση βήμα-βήμα</h3><ol>';
+    s+='<li>Το δίκτυο '+dotted(E.net)+' ανήκει στην <b>τάξη '+cN+'</b>, άρα η προκαθορισμένη μάσκα είναι <b>'+dotted(maskInt(E.p))+'</b> (/'+E.p+') και μένουν '+hostBits0+' ψηφία για Η/Υ.</li>';
+    if(E.kind==='x'){
+      let t=''; for(let i=1;i<=E.n;i++) t+=pw(i)+' = '+Math.pow(2,i)+(Math.pow(2,i)>=E.val?' ≥ ':' < ')+E.val+(i<E.n?', ':'');
+      s+='<li>Ζητούνται '+E.val+' υποδίκτυα. Ψάχνουμε τον μικρότερο n με 2ⁿ ≥ '+E.val+': '+t+'. Άρα δίνονται <b>n = '+E.n+' ψηφία</b> στη μάσκα και μένουν '+hostBits0+' − '+E.n+' = '+E.h+' ψηφία για Η/Υ.</li>';
+    } else {
+      let t=''; for(let i=Math.max(2,E.h-2);i<=E.h;i++) t+=pw(i)+' − 2 = '+(Math.pow(2,i)-2)+(Math.pow(2,i)-2>=E.val?' ≥ ':' < ')+E.val+(i<E.h?', ':'');
+      s+='<li>Ζητούνται τουλάχιστον '+E.val+' Η/Υ ανά υποδίκτυο. Ψάχνουμε τον μικρότερο h με 2ʰ − 2 ≥ '+E.val+': '+t+'. Άρα χρειάζονται <b>h = '+E.h+' ψηφία για Η/Υ</b> και δίνονται '+hostBits0+' − '+E.h+' = <b>'+E.n+' ψηφία</b> στη μάσκα.</li>';
+    }
+    const mb=bin32(maskInt(E.np)).replace(/\./g,'');
+    let col=''; for(let i=0;i<32;i++){ const c=i<E.p?'bn':(i<E.np?'bs':'bh'); col+='<span class="'+c+'">'+mb[i]+'</span>'+((i%8===7&&i<31)?'.':''); }
+    s+='<li>Νέα μάσκα: '+E.p+' + '+E.n+' = '+E.np+' άσοι → <b>'+dotted(maskInt(E.np))+'</b> (/'+E.np+')<br><span class="mono">'+col+'</span><br>'+
+       '<span class="lbl"><span class="bn">μπλε</span>: προκαθορισμένη μάσκα · <span class="bs">μωβ</span>: ψηφία που δόθηκαν · <span class="bh">πορτοκαλί</span>: ψηφία Η/Υ</span></li>';
+    s+='<li>Υποδίκτυα: '+pw(E.n)+' = <b>'+fmt(E.S)+'</b>. Διευθύνσεις ανά υποδίκτυο: '+pw(E.h)+' = <b>'+fmt(E.size)+'</b>. Χρησιμοποιήσιμες: '+fmt(E.size)+' − 2 = <b>'+fmt(E.size-2)+'</b> (αφαιρούνται η διεύθυνση υποδικτύου και η διεύθυνση εκπομπής).</li>';
+    /* βήμα στην οκτάδα */
+    const oct=Math.floor((E.np-1)/8), stepInOct=E.size/Math.pow(256,3-oct);
+    s+='<li>Κάθε υποδίκτυο έχει '+fmt(E.size)+' διευθύνσεις, άρα οι διευθύνσεις υποδικτύων αυξάνουν κατά <b>'+stepInOct+'</b> στην '+(oct+1)+'η οκτάδα. '+
+       'Διεύθυνση εκπομπής = διεύθυνση του επόμενου υποδικτύου − 1.</li>';
+    const after=E.S*(E.size-2);
+    s+='<li>Σύγκριση: πριν '+pw(hostBits0)+' − 2 = '+fmt(before)+' διευθύνσεις Η/Υ, μετά '+fmt(E.S)+' × '+fmt(E.size-2)+' = '+fmt(after)+'. Χάνονται '+fmt(before)+' − '+fmt(after)+' = <b>'+fmt(before-after)+'</b> διευθύνσεις, γιατί κάθε υποδίκτυο έχει τη δική του διεύθυνση υποδικτύου και εκπομπής (2 × '+fmt(E.S)+' − 2 = '+fmt(before-after)+').</li>';
+    s+='</ol>';
+    /* πίνακας υποδικτύων */
+    let idx=[]; if(E.S<=32){ for(let i=0;i<E.S;i++) idx.push(i); } else { idx=[0,1,2,3,-1,E.S-2,E.S-1]; }
+    const mark=new Set([E.pair[0],E.pair[1],E.extras.includes('hosts')?E.k:-2]);
+    s+='<h3>Όλα τα υποδίκτυα</h3><table class="list"><thead><tr><th>Υποδίκτυο</th><th>Διεύθυνση υποδικτύου</th><th>1ος Η/Υ</th><th>Τελευταίος Η/Υ</th><th>Διεύθυνση εκπομπής</th></tr></thead><tbody>';
+    idx.forEach(i=>{
+      if(i<0){ s+='<tr><td colspan="5">…</td></tr>'; return; }
+      s+='<tr'+(mark.has(i)?' class="mark"':'')+'><td>'+ord(i)+'</td><td class="mono">'+dotted(subnetNet(i))+'</td><td class="mono">'+dotted(subnetNet(i)+1)+'</td><td class="mono">'+dotted(subnetBc(i)-1)+'</td><td class="mono">'+dotted(subnetBc(i))+'</td></tr>';
+    });
+    s+='</tbody></table><p class="lbl">Τονισμένα: τα υποδίκτυα που ζητούνται στα ερωτήματα.</p>';
+    $('sol').innerHTML=s; $('sol').style.display='block';
+    $('sol').scrollIntoView({behavior:'smooth'});
+  }
+
+  /* ---------- δική μου άσκηση ---------- */
+  function custom(){
+    const err=t=>{$('cErr').innerHTML=msg('bad',t);};
+    $('cErr').innerHTML='';
+    const raw=$('cNet').value.trim(); const parts=raw.split('/');
+    const n=parseIp(parts[0]); if(n===null) return err('Γράψε έγκυρη διεύθυνση δικτύου, π.χ. 192.130.5.0');
+    const f=n>>>24; let p = parts[1]!==undefined ? Number(parts[1]) : (f<128?8:f<192?16:f<224?24:null);
+    if(p===null||!(p>=8&&p<=30)) return err('Η διεύθυνση πρέπει να είναι τάξης A, B ή C.');
+    if(((n & maskInt(p))>>>0)!==n) return err('Η '+dotted(n)+' δεν είναι διεύθυνση δικτύου για /'+p+' (τα ψηφία Η/Υ πρέπει να είναι 0). Μήπως εννοείς '+dotted((n&maskInt(p))>>>0)+';');
+    const v=parseNum($('cVal').value); if(!v||v<2) return err('Δώσε αριθμό Χ ή Υ (τουλάχιστον 2).');
+    const e=build(n,p,$('cKind').value,v);
+    if(!e) return err('Δεν γίνεται: δεν φτάνουν τα ψηφία της διεύθυνσης για αυτή την απαίτηση.');
+    E=e; render();
+  }
+
+  $('btnNew').onclick=()=>{ E=randomEx(); render(); };
+  $('btnCheck').onclick=check;
+  $('btnSol').onclick=solution;
+  $('btnCustom').onclick=custom;
+  $('btnPrint').onclick=()=>window.print();
+  E=randomEx(); render();
+})();
+</script>
+</body>
+</html>
